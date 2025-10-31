@@ -1,23 +1,38 @@
-import jwt from 'jsonwebtoken';
-import { config } from '../config/env.js';
+import jwt from "jsonwebtoken";
+import { config } from "../config/env.js";
 
-export function auth(req, res, next) {
-  const token =
-    req.cookies?.token ||
-    (req.headers.authorization?.startsWith('Bearer ')
-      ? req.headers.authorization.split(' ')[1]
-      : null);
-
-  if (!token) return res.status(401).json({ message: 'Unauthorized' });
-
+/**
+ * Middleware: authenticate the user based on JWT token.
+ * Looks for token in cookies OR Authorization header (Bearer <token>)
+ */
+export const auth = (req, res, next) => {
   try {
-    const decoded = jwt.verify(token, config.jwtSecret);
-    req.user = decoded; // { id, name, role }
-    return next();
-  } catch (err) {
-    return res.status(401).json({ message: 'Invalid token' });
-  }
-}
+    // 1️⃣  Try to read token from cookie
+    let token = req.cookies?.token;
 
-// (Optional) also provide a default export if you ever want `import auth from ...`
-export default auth;
+    // 2️⃣  Fallback: check Authorization header
+    if (!token && req.headers.authorization) {
+      const header = req.headers.authorization;
+      if (header.startsWith("Bearer ")) {
+        token = header.slice(7); // remove "Bearer "
+      }
+    }
+
+    // 3️⃣  If no token found, deny access
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized. No token provided." });
+    }
+
+    // 4️⃣  Verify token
+    const decoded = jwt.verify(token, config.jwtSecret);
+
+    // 5️⃣  Attach decoded user info to request
+    req.user = decoded;
+
+    // 6️⃣  Continue to next middleware/route
+    next();
+  } catch (err) {
+    console.error("Auth error:", err.message);
+    return res.status(401).json({ message: "Invalid or expired token." });
+  }
+};

@@ -6,6 +6,10 @@ import { connectDB } from './db/connect.js';
 import authRoutes from './routes/auth.routes.js';
 import workRoutes from './routes/work.routes.js';
 import dashboardRoutes from "./routes/dashboard.routes.js";
+import taskRoutes from './routes/task.routes.js';
+
+
+
 
 const app = express();
 
@@ -21,6 +25,8 @@ app.get('/api/health', (req, res) => res.json({ ok: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/work', workRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use('/api/tasks', taskRoutes);
+
 // Start
 await connectDB(config.mongoUri);
 app.listen(config.port, () => {

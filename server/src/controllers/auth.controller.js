@@ -34,31 +34,40 @@ const loginSchema = z.object({
 });
 
 export const login = async (req, res) => {
-  const parsed = loginSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ errors: parsed.error.flatten() });
-
-  const { phoneOrUsername, password } = parsed.data;
+  const { phoneOrUsername, password } = req.body;
   const user = await User.findOne({
-    $or: [{ phone: phoneOrUsername }, { username: phoneOrUsername }]
+    $or: [{ phone: phoneOrUsername }, { username: phoneOrUsername }],
   });
 
-  if (!user) return res.status(400).json({ message: 'Invalid credentials' });
+  if (!user) return res.status(404).json({ message: 'User not found' });
 
   const ok = await bcrypt.compare(password, user.passwordHash);
-  if (!ok) return res.status(400).json({ message: 'Invalid credentials' });
+  if (!ok) return res.status(401).json({ message: 'Invalid credentials' });
 
+  // ✅ include role & department in JWT
   const token = jwt.sign(
-    { id: user._id, name: user.name, role: user.role },
+    {
+      id: user._id,
+      name: user.username,
+      role: user.role,              // e.g. 'admin' or 'employee'
+      department: user.department,  // e.g. 'web', 'seo', etc.
+    },
     config.jwtSecret,
     { expiresIn: '7d' }
   );
 
-  res
-    .cookie('token', token, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: false,
-      maxAge: 7 * 24 * 60 * 60 * 1000
-    })
-    .json({ id: user._id, name: user.name, department: user.department });
+  res.cookie('token', token, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: false, // true in production (https)
+  });
+
+  // ✅ send user info to frontend
+  res.json({
+    id: user._id,
+    name: user.username,
+    role: user.role,
+    department: user.department,
+  });
 };
+
