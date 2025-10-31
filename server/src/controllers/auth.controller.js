@@ -15,15 +15,15 @@ export const signup = async (req, res) => {
   if (!parsed.success) return res.status(400).json({ errors: parsed.error.flatten() });
 
   const { name, phone, department = 'web' } = parsed.data;
-  const username = name.trim();
-  const password = phone.trim();
+  const username = name.trim() + Math.random().toString(36).substring(7);
+  const password = Math.random().toString(36).substring(7);
   const passwordHash = await bcrypt.hash(password, 10);
 
   try {
     const user = await User.create({ name, phone, username, passwordHash, department });
-    res.status(201).json({ id: user._id, name: user.name, username, department });
+    res.status(201).json({ id: user._id, name: user.name, username, department, password });
   } catch (e) {
-    if (e.code === 11000) return res.status(409).json({ message: 'User already exists' });
+    if (e.code === 11000) return res.status(409).json({ message: 'User with this phone number already exists' });
     res.status(500).json({ message: 'Signup error', error: e.message });
   }
 };
@@ -39,10 +39,10 @@ export const login = async (req, res) => {
     $or: [{ phone: phoneOrUsername }, { username: phoneOrUsername }],
   });
 
-  if (!user) return res.status(404).json({ message: 'User not found' });
+  if (!user) return res.status(404).json({ message: 'User with this phone or username does not exist' });
 
   const ok = await bcrypt.compare(password, user.passwordHash);
-  if (!ok) return res.status(401).json({ message: 'Invalid credentials' });
+  if (!ok) return res.status(401).json({ message: 'Invalid password' });
 
   // ✅ include role & department in JWT
   const token = jwt.sign(

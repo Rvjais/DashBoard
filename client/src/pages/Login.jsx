@@ -4,12 +4,14 @@ import { useNavigate, Link } from "react-router-dom";
 export default function Login() {
   // --- All component logic is unchanged ---
   const [f, setF] = useState({ phoneOrUsername: "", password: "" });
+  const [err, setErr] = useState("");
   const nav = useNavigate();
 
   const ch = (e) => setF((s) => ({ ...s, [e.target.name]: e.target.value }));
 
   const go = async (e) => {
     e.preventDefault();
+    setErr("");
 
     try {
       const r = await fetch(import.meta.env.VITE_API_BASE + "/auth/login", {
@@ -20,19 +22,19 @@ export default function Login() {
       });
 
       if (!r.ok) {
-        alert("Invalid credentials");
+        const d = await r.json().catch(() => ({}));
+        setErr(d.message || "Invalid credentials");
         return;
       }
 
       const data = await r.json();
 
       localStorage.setItem("user", JSON.stringify(data));
-      localStorage.setItem("token", "dev");
 
       nav("/dashboard");
     } catch (err) {
       console.error("Login error:", err);
-      alert("Login failed, try again later.");
+      setErr("Login failed, try again later.");
     }
   };
   // --- End of unchanged logic ---
@@ -75,6 +77,8 @@ export default function Login() {
 
             <button className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white py-2.5 font-medium transition">Log In</button>
           </form>
+
+          {err && <div className="mt-3 text-sm text-red-600">{err}</div>}
 
           <div className="mt-4 text-sm text-center text-gray-600 dark:text-gray-300">
             New here? <Link className="text-blue-600 hover:underline" to="/signup">Create account</Link>

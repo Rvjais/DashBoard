@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 export default function Signup(){
   const [f,setF]=useState({name:"",phone:"",department:"web"});
   const [err, setErr] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
   const nav=useNavigate();
   const ch=e=>setF(s=>({...s,[e.target.name]:e.target.value}));
   const go=async e=>{
@@ -19,20 +20,9 @@ export default function Signup(){
       setErr(d.message || "Signup failed. Try a different name/phone.");
       return;
     }
-    // 2) Immediately log in using phone as username and password per server logic
-    const l = await fetch(import.meta.env.VITE_API_BASE + "/auth/login",{
-      method:"POST",headers:{ "Content-Type":"application/json" },
-      credentials:"include", body:JSON.stringify({ phoneOrUsername:f.phone, password:f.phone })
-    });
-    if (!l.ok) {
-      const d = await l.json().catch(()=>({}));
-      setErr(d.message || "Auto login failed. Please try logging in.");
-      return;
-    }
-    const user = await l.json();
-    localStorage.setItem("user", JSON.stringify(user));
-    localStorage.setItem("token","dev");
-    nav("/dashboard");
+    const data = await s.json();
+    setSuccessMsg(`Signup successful! Your username is "${data.username}" and password is "${data.password}". Please login to continue.`);
+    setTimeout(() => nav("/login"), 5000);
   };
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-[#0b0c10] dark:to-[#0e1116] flex items-center justify-center p-4">
@@ -67,6 +57,7 @@ export default function Signup(){
           </form>
 
           {err && <div className="mt-3 text-sm text-red-600">{err}</div>}
+          {successMsg && <div className="mt-3 text-sm text-green-600">{successMsg}</div>}
 
           <div className="mt-4 text-sm text-center text-gray-600 dark:text-gray-300">
             Already have an account? <Link className="text-blue-600 hover:underline" to="/login">Log in</Link>

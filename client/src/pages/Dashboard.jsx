@@ -113,11 +113,9 @@ export default function Dashboard() {
   const handleRefresh = async () => {
     try {
       setLoading(true);
-      // Live call (uncomment when backend is ready)
-      // const res = await fetch(import.meta.env.VITE_API_BASE + "/dashboard/metrics", { credentials: "include" });
-      // const data = await res.json();
-      // setMetrics(data);
-      await new Promise((r) => setTimeout(r, 500)); // mock delay
+      const res = await fetch(import.meta.env.VITE_API_BASE + "/dashboard/metrics", { credentials: "include" });
+      const data = await res.json();
+      setMetrics(data);
     } finally {
       setLoading(false);
     }
@@ -349,7 +347,7 @@ export default function Dashboard() {
               </div>
             </div>
           </Card>
-
+          
           {/* Quick Access */}
           <Card className="p-5">
             <div className="flex items-center gap-2 mb-4">
